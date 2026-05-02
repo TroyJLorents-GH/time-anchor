@@ -121,16 +121,6 @@ Multi-window aware: each terminal's hooks pass `$CLAUDE_SESSION_ID` to the scrip
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python C:/Users/YOUR_USERNAME/.claude/skills/time-anchor/scripts/end_session.py"
-          }
-        ]
-      }
     ]
   }
 }
@@ -151,22 +141,14 @@ Multi-window aware: each terminal's hooks pass `$CLAUDE_SESSION_ID` to the scrip
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/skills/time-anchor/scripts/end_session.py"
-          }
-        ]
-      }
     ]
   }
 }
 ```
 
-After saving, restart Claude Code. Every new session auto-logs a start; every exit auto-closes. `/session-time` will show your current terminal's session as active and a growing count of total sessions.
+After saving, restart Claude Code. Every new Claude Code launch auto-logs a session start. `/session-time` will show your current terminal's session as active and a growing count of total sessions.
+
+**Why no `Stop` hook for auto-end?** Claude Code's `Stop` hook fires after every assistant response, not on session exit — so wiring `end_session.py` to it would close your session after every turn. Sessions stay open until you run `/end-session-time` manually, or until you start the next Claude Code session (a future cleanup pass will optionally auto-close stale records older than 24h).
 
 **Already have terminals open?** Run `/start-session-time` once in each existing terminal to register it under the new tracking. Or just close and reopen as you finish tasks — the `SessionStart` hook will fire for each new launch.
 
