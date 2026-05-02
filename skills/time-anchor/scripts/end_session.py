@@ -8,11 +8,10 @@ CLAUDE_SESSION_ID set, AND (b) that record itself was logged without one
 ending a session that belongs to another open window.
 """
 
-import os
 import sys
 from datetime import datetime
 
-from _common import emit, get_timezone, load_memory, save_memory
+from _common import emit, get_claude_instance_id, get_timezone, load_memory, save_memory
 
 
 def main() -> int:
@@ -24,7 +23,7 @@ def main() -> int:
         return 2
 
     sessions = data.get("sessions", [])
-    claude_session_id = os.environ.get("CLAUDE_SESSION_ID", "").strip() or None
+    claude_session_id = get_claude_instance_id()
 
     target = None
     if claude_session_id:

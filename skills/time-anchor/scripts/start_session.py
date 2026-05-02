@@ -8,12 +8,11 @@ instead of creating a duplicate (handles SessionStart firing twice per
 Claude Code instance).
 """
 
-import os
 import sys
 import uuid
 from datetime import datetime
 
-from _common import emit, get_timezone, load_memory, save_memory
+from _common import emit, get_claude_instance_id, get_timezone, load_memory, save_memory
 
 
 def main() -> int:
@@ -29,7 +28,7 @@ def main() -> int:
 
     now = datetime.now(tz)
     sessions = data.setdefault("sessions", [])
-    claude_session_id = os.environ.get("CLAUDE_SESSION_ID", "").strip() or None
+    claude_session_id = get_claude_instance_id()
 
     # If we already have an open record for this Claude Code instance, reuse it.
     if claude_session_id:

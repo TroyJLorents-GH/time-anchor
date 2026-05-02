@@ -11,11 +11,10 @@ render time consistently without reformatting the ISO string themselves.
 Optional argument: number of recent sessions to include (default 3).
 """
 
-import os
 import sys
 from datetime import datetime
 
-from _common import emit, get_timezone, load_memory
+from _common import emit, get_claude_instance_id, get_timezone, load_memory
 
 
 def main() -> int:
@@ -30,7 +29,7 @@ def main() -> int:
     now = datetime.now(tz)
     sessions = data.get("sessions", [])
     recent = sessions[-n:] if sessions else []
-    claude_session_id = os.environ.get("CLAUDE_SESSION_ID", "").strip() or None
+    claude_session_id = get_claude_instance_id()
 
     current_record = None
     if claude_session_id:

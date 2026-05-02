@@ -112,3 +112,20 @@ def now_in_tz(data: dict[str, Any]) -> datetime | None:
 def emit(payload: dict[str, Any]) -> None:
     """Print JSON to stdout (the canonical output format for these scripts)."""
     print(json.dumps(payload, indent=2, default=str))
+
+
+def get_claude_instance_id() -> str | None:
+    """Best-effort identifier for the current Claude Code instance.
+
+    Tries (in order):
+      1. CLAUDE_SESSION_ID — future-proof, in case Anthropic adds it.
+      2. CLAUDE_CODE_SSE_PORT — unique per running CC instance (each instance
+         binds its own local SSE server on a random port). Stable for the
+         lifetime of the process.
+      3. None — caller should fall back to most-recent-open logic.
+    """
+    for var in ("CLAUDE_SESSION_ID", "CLAUDE_CODE_SSE_PORT"):
+        v = os.environ.get(var, "").strip()
+        if v:
+            return f"{var.lower()}:{v}"
+    return None
