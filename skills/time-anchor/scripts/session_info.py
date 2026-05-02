@@ -70,15 +70,10 @@ def main() -> int:
             if s.get("claude_session_id") == claude_session_id and not s.get("ended_at"):
                 current_record = s
                 break
-    else:
-        # No env var available (e.g. CC launched via --resume). Match the
-        # most recent open record that ALSO has no instance id — covers
-        # both legacy untracked records and modern records written with
-        # claude_session_id: null.
-        for s in reversed(sessions):
-            if not s.get("ended_at") and not s.get("claude_session_id"):
-                current_record = s
-                break
+    # If env var is missing (e.g. CC launched via --resume), we can't
+    # reliably identify "this terminal's" record — multiple null-port
+    # terminals would all match the same most-recent-open. Leave current
+    # null and let the user see all active sessions in the table instead.
 
     current = None
     if current_record:

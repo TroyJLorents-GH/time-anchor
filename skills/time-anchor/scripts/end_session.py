@@ -40,14 +40,9 @@ def main() -> int:
             if s.get("claude_session_id") == claude_session_id and not s.get("ended_at"):
                 target = s
                 break
-    else:
-        # No env var available (e.g. claude --resume mode). Close the most
-        # recent open record that also has no instance id — covers legacy
-        # untracked and modern null records.
-        for s in reversed(sessions):
-            if not s.get("ended_at") and not s.get("claude_session_id"):
-                target = s
-                break
+    # When env var is missing we can't tell which open null-port record
+    # belongs to this terminal. Bail out rather than risk closing a
+    # different terminal's session.
 
     if target is None:
         emit(
