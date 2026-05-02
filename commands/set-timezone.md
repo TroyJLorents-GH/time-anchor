@@ -3,13 +3,15 @@ description: Set or change the user's timezone for time-anchor
 argument-hint: "[optional IANA name e.g. America/Phoenix]"
 ---
 
-Use the time-anchor skill to set the user's timezone.
+Use the time-anchor skill to set or **change** the user's timezone.
+
+**IMPORTANT:** Invoking this command always runs the flow below, even if a timezone is already saved. Do NOT short-circuit with "TZ is already set" — the user invoked `/set-timezone` because they want to set or change it. If a timezone already exists, mention it ("Current: America/Phoenix") and continue.
 
 ## Flow
 
-**1. Direct IANA path.** If `$ARGUMENTS` is non-empty and looks like a valid IANA name (matches pattern `Region/City` or known special zones like `UTC`), call `set_timezone.py "$ARGUMENTS"` immediately. Done.
+**1. Direct IANA path.** If `$ARGUMENTS` is non-empty AND matches a valid IANA pattern (`Region/City` like `America/Phoenix`, or special names like `UTC`, `GMT`), call `set_timezone.py "$ARGUMENTS"` immediately. The script validates against `zoneinfo` and rejects invalid names — if it errors, fall through to step 2.
 
-**2. Auto-detect path.** Otherwise run `detect_timezone.py`. If `best` is non-null:
+**2. Auto-detect path.** If `$ARGUMENTS` is empty OR was an invalid/partial name (e.g. just `America` or `Phoenix`), run `detect_timezone.py`. If `best` is non-null:
 - Use `AskUserQuestion` with two options: `Use {best.timezone}` and `Pick a different one`.
 - If accepted, call `set_timezone.py` with the detected zone. Done.
 
