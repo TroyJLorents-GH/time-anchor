@@ -1,6 +1,6 @@
 {
   "name": "time-anchor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Anchor Claude to the real, current time in the user's local timezone. Auto-detects timezone on first install, logs session start/end, persists in a memory file (its own or shared with another memory plugin).",
   "author": {
     "name": "Troy Lorents",

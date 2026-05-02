@@ -14,7 +14,7 @@
         "repo": "TroyJLorents-GH/time-anchor"
       },
       "description": "Anchor Claude to the real, current time. Auto-detects host timezone, logs session start/end, persists in a memory file (its own or shared with another memory plugin).",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "Troy Lorents",
         "url": "https://github.com/TroyJLorents-GH"

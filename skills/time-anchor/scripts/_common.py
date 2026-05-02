@@ -14,17 +14,20 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "2.0"
 NAMESPACE_KEY = "time_anchor"
 
 EXTERNAL_ENV = "TIME_ANCHOR_MEMORY_PATH"
 PRIMARY_PATH = Path.home() / ".claude" / "memory" / "time-anchor.json"
 DEFAULT_PATH = Path.home() / ".claude" / "skills" / "time-anchor" / "memory.json"
+
+DEFAULT_IDLE_RESET_HOURS = 4
+DEFAULT_TIME_FORMAT = "12h"
 
 
 def resolve_memory_path() -> tuple[Path, str]:
@@ -44,7 +47,15 @@ def empty_memory() -> dict[str, Any]:
         "installed_at": None,
         "memory_backend": "self",
         "external_path": None,
-        "sessions": [],
+        "settings": {
+            "idle_reset_hours": DEFAULT_IDLE_RESET_HOURS,
+            "time_format": DEFAULT_TIME_FORMAT,
+        },
+        "session": {
+            "started_at": None,
+            "last_active_at": None,
+        },
+        "lifetime_command_count": 0,
     }
 
 
@@ -58,9 +69,7 @@ def load_memory() -> tuple[dict[str, Any], Path, str]:
     raw = json.loads(path.read_text(encoding="utf-8"))
 
     if backend == "external":
-        # In a shared file, our data lives under a namespace key.
         data = raw.get(NAMESPACE_KEY) or empty_memory()
-        # Carry the host file's other keys forward when we write back.
         data["_host_file_other_keys"] = {
             k: v for k, v in raw.items() if k != NAMESPACE_KEY
         }
@@ -70,7 +79,13 @@ def load_memory() -> tuple[dict[str, Any], Path, str]:
     # Backfill any missing schema fields so older files keep working.
     template = empty_memory()
     for k, v in template.items():
-        data.setdefault(k, v)
+        if k not in data:
+            data[k] = v
+    # Backfill nested keys
+    for k, v in template["settings"].items():
+        data["settings"].setdefault(k, v)
+    for k, v in template["session"].items():
+        data["session"].setdefault(k, v)
 
     return data, path, backend
 
@@ -85,7 +100,6 @@ def save_memory(data: dict[str, Any], path: Path, backend: str) -> None:
         wrapped[NAMESPACE_KEY] = data
         path.write_text(json.dumps(wrapped, indent=2), encoding="utf-8")
     else:
-        # Strip any sentinel keys before writing
         data.pop("_host_file_other_keys", None)
         path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
@@ -114,33 +128,51 @@ def emit(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, indent=2, default=str))
 
 
-def format_human(dt: datetime) -> str:
-    """Format a tz-aware datetime as 'Saturday, May 2, 2026 at 2:29 PM MST'.
+def get_time_format(data: dict[str, Any]) -> str:
+    """Return user's preferred time format ('12h' or '24h')."""
+    fmt = data.get("settings", {}).get("time_format", DEFAULT_TIME_FORMAT)
+    return fmt if fmt in ("12h", "24h") else DEFAULT_TIME_FORMAT
 
-    Built manually rather than via strftime to avoid:
-      - Leading zeros (Windows %d/%I always pad; GNU %-d/%-I is platform-specific)
-      - Inconsistent rendering across Claude turns when callers reformat the
-        ISO string themselves.
+
+def format_human(dt: datetime, fmt: str = DEFAULT_TIME_FORMAT) -> str:
+    """Format a tz-aware datetime per user preference.
+
+    12h: 'Saturday, May 2, 2026 at 2:29 PM MST'
+    24h: 'Saturday, May 2, 2026 at 14:29 MST'
     """
     weekday = dt.strftime("%A")
     month = dt.strftime("%B")
     day = dt.day
     year = dt.year
-    hour_12 = dt.hour % 12 or 12
     minute = f"{dt.minute:02d}"
-    ampm = "AM" if dt.hour < 12 else "PM"
     tz_label = dt.strftime("%Z") or ""
     suffix = f" {tz_label}" if tz_label else ""
+
+    if fmt == "24h":
+        hour_24 = f"{dt.hour:02d}"
+        return f"{weekday}, {month} {day}, {year} at {hour_24}:{minute}{suffix}"
+
+    hour_12 = dt.hour % 12 or 12
+    ampm = "AM" if dt.hour < 12 else "PM"
     return f"{weekday}, {month} {day}, {year} at {hour_12}:{minute} {ampm}{suffix}"
 
 
-def format_short_time(dt: datetime) -> str:
-    """Format a datetime as '2:29 PM MST' — used in compact table cells."""
-    hour_12 = dt.hour % 12 or 12
+def format_short_time(dt: datetime, fmt: str = DEFAULT_TIME_FORMAT) -> str:
+    """Format a datetime as compact time per user preference.
+
+    12h: '2:29 PM MST'
+    24h: '14:29 MST'
+    """
     minute = f"{dt.minute:02d}"
-    ampm = "AM" if dt.hour < 12 else "PM"
     tz_label = dt.strftime("%Z") or ""
     suffix = f" {tz_label}" if tz_label else ""
+
+    if fmt == "24h":
+        hour_24 = f"{dt.hour:02d}"
+        return f"{hour_24}:{minute}{suffix}"
+
+    hour_12 = dt.hour % 12 or 12
+    ampm = "AM" if dt.hour < 12 else "PM"
     return f"{hour_12}:{minute} {ampm}{suffix}"
 
 
@@ -154,18 +186,33 @@ def humanize_duration(seconds: int) -> str:
     return f"{hours}h {rem // 60}m"
 
 
-def get_claude_instance_id() -> str | None:
-    """Best-effort identifier for the current Claude Code instance.
+def touch_session(data: dict[str, Any], now: datetime) -> dict[str, Any]:
+    """Update last_active_at on every command. Reset if idle past threshold.
 
-    Tries (in order):
-      1. CLAUDE_SESSION_ID — future-proof, in case Anthropic adds it.
-      2. CLAUDE_CODE_SSE_PORT — unique per running CC instance (each instance
-         binds its own local SSE server on a random port). Stable for the
-         lifetime of the process.
-      3. None — caller should fall back to most-recent-open logic.
+    Returns metadata about what happened: {'reset': bool, 'reset_reason': str|None}.
+    Mutates data in place.
     """
-    for var in ("CLAUDE_SESSION_ID", "CLAUDE_CODE_SSE_PORT"):
-        v = os.environ.get(var, "").strip()
-        if v:
-            return f"{var.lower()}:{v}"
-    return None
+    session = data.setdefault("session", {"started_at": None, "last_active_at": None})
+    settings = data.setdefault("settings", {})
+    idle_hours = settings.get("idle_reset_hours", DEFAULT_IDLE_RESET_HOURS)
+
+    now_iso = now.isoformat(timespec="seconds")
+    info: dict[str, Any] = {"reset": False, "reset_reason": None}
+
+    if not session.get("started_at"):
+        session["started_at"] = now_iso
+        info["reset"] = True
+        info["reset_reason"] = "first run"
+    elif idle_hours and session.get("last_active_at"):
+        try:
+            last = datetime.fromisoformat(session["last_active_at"])
+            if now - last > timedelta(hours=float(idle_hours)):
+                session["started_at"] = now_iso
+                info["reset"] = True
+                info["reset_reason"] = f"idle > {idle_hours}h"
+        except (ValueError, TypeError):
+            pass
+
+    session["last_active_at"] = now_iso
+    data["lifetime_command_count"] = int(data.get("lifetime_command_count", 0)) + 1
+    return info

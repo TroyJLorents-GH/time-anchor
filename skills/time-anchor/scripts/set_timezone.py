@@ -9,7 +9,14 @@ import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from _common import emit, load_memory, save_memory
+from _common import (
+    emit,
+    format_human,
+    get_time_format,
+    load_memory,
+    save_memory,
+    touch_session,
+)
 
 
 def main() -> int:
@@ -43,13 +50,9 @@ def main() -> int:
     if is_first_install:
         data["installed_at"] = now.isoformat()
 
+    fmt = get_time_format(data)
+    touch_session(data, now)
     save_memory(data, path, backend)
-
-    # %-I and %-d are GNU-only; fall back gracefully on Windows
-    try:
-        human = now.strftime("%A, %B %-d, %Y at %-I:%M %p %Z")
-    except ValueError:
-        human = now.strftime("%A, %B %d, %Y at %I:%M %p %Z")
 
     emit(
         {
@@ -58,7 +61,9 @@ def main() -> int:
             "previous_timezone": previous,
             "first_install": is_first_install,
             "now": now.isoformat(),
-            "human": human,
+            "human": format_human(now, fmt),
+            "tz_label": now.strftime("%Z"),
+            "settings": data.get("settings", {}),
             "memory_path": str(path),
             "backend": backend,
         }
