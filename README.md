@@ -36,6 +36,17 @@ Recent sessions:
 
 ❯ /end-session-time
 Session closed. Duration: 1 hr 22 min.
+
+❯ /standup
+Standup · gap 11h 26m (Fri 11:04 PM → Sat 10:30 AM MST)
+
+Schedule fires (2):
+  · 06:00 — niche scan
+  · 07:00 — daily digest + content drafts
+
+Telegram (0)
+remember (1):
+  · 09:14 — saved checkpoint feedback
 ```
 
 **Or natural language** — Claude auto-invokes the skill:
@@ -98,6 +109,7 @@ cp time-anchor/commands/*.md ~/.claude/commands/
 | `/start-session-time` | Log the start of this session |
 | `/end-session-time` | Close the session and report duration |
 | `/session-time [N]` | Show current session info + last N sessions (default 5) |
+| `/standup` | "While you were away" report — session gap + best-effort scan of other plugins (schedule, telegram, imessage, remember) for activity during the gap |
 
 When installed as a plugin, commands are namespaced as `/time-anchor:current-time`, `/time-anchor:set-timezone`, etc.
 
