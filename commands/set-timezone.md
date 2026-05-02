@@ -17,16 +17,24 @@ Use the time-anchor skill to set or **change** the user's timezone.
 
 **3. Free-text path.** If detection fails or user picks "different", ask in chat: *"What city, country, or region are you in?"*
 
-Map their answer to candidate IANA zones using `references/timezones.md` (full IANA list bundled with this skill) + your own knowledge of city/country geography. Present candidates via `AskUserQuestion`:
+Map their answer using `references/country_zones.md` (ordered country lists for multi-zone countries) and `references/timezones.md` (full IANA list).
 
-| User input pattern | Candidates to show |
+**Show ALL zones for the country, never just the top 4.** Claude Code's `AskUserQuestion` tool caps at ~5 options per pick, so paginate:
+
+1. **Print the full numbered list of zones for that country in chat as plain markdown** (read directly from `references/country_zones.md`). The user must be able to see every option before selecting.
+2. **Then** show a paginated `AskUserQuestion`: first 4 zones + a `More zones (5–8)` option that re-prompts with the next batch + a final `Type IANA name directly` option that lets the user paste the canonical name from the printed list.
+3. Loop the picker until the user selects a zone.
+
+| User input pattern | What to do |
 |---|---|
-| Single-zone country (India, Japan, UK, Germany) | The 1 canonical zone — confirm with Yes/No. |
-| Multi-zone country (US, Russia, Brazil, Australia, Canada, Mexico, Indonesia) | Top 4 by population + `Other` option. |
-| Specific city | The exact zone + 1-2 zones in same UTC offset within ~500 mi as alternatives. |
-| Region (e.g. "Eastern Europe", "Pacific Islands") | 4 most populous zones in that region + `Other`. |
+| Single-zone country (India, Japan, UK, Germany) | Confirm the 1 canonical zone with Yes/No. |
+| Multi-zone country (US, Russia, Canada, Brazil, Australia, Mexico, Indonesia, Spain, Argentina, etc.) | Print full list from `country_zones.md`, then paginated picker as above. |
+| Specific city | Map directly to the matching IANA zone, confirm with Yes/No. |
+| Region (e.g. "Eastern Europe") | Print full list of zones in that region from `timezones.md`, then paginated picker. |
 
-If the user picks `Other`, drill down: show the next set of zones in that region (use `references/timezones.md`), again capped at 4 + `Other`. Repeat until they pick a specific zone.
+**US-specific note:** `America/Phoenix` (Arizona, no-DST) MUST appear in the printed list and reachable via the picker — picking `America/Denver` for an Arizonan is wrong half the year.
+
+If a country has more zones than `country_zones.md` documents (e.g. less common ones in Antarctica, France's overseas territories), fall back to grepping `references/timezones.md` for the country code prefix and include all matches.
 
 **4. Save.** Once a zone is selected, call:
 
