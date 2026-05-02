@@ -22,8 +22,10 @@ If `closed: true`:
 | Duration | {duration_human} |
 | Messages | {message_count} |
 
+> Continuing in this terminal? Run `/start-session-time` to log a new session.
+
 If `closed: false` (no matching open session for this Claude Code instance):
 
 > No open session for this Claude Code instance to close.
 
-No commentary outside the table or the single-line "no open session" message.
+No commentary outside the table or single-line message.
