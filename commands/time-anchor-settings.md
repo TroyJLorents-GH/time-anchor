@@ -1,26 +1,28 @@
 ---
 description: View or change time-anchor settings — idle reset hours and time format.
-argument-hint: "[optional: --idle <hours|never> --format <12h|24h>]"
+argument-hint: "[--idle <hours|never>] [--format <12h|24h>]"
 ---
 
-If `$ARGUMENTS` is empty: just print current settings.
-
-```bash
-python <skill-path>/scripts/update_settings.py
-```
-
-If `$ARGUMENTS` contains values, pass them through:
+If `$ARGUMENTS` is non-empty (e.g. `--idle 8 --format 24h`), pass them through and skip the interactive flow:
 
 ```bash
 python <skill-path>/scripts/update_settings.py $ARGUMENTS
 ```
 
-If the user wants to change settings interactively (no args), use `AskUserQuestion` with TWO questions:
+If `$ARGUMENTS` is empty, run the interactive flow:
 
-1. **Idle reset:** options `1 hour`, `4 hours` (default), `8 hours`, `24 hours`, `Never`. Map: `1` / `4` / `8` / `24` / `never`.
-2. **Time format:** options `12-hour AM/PM` (default), `24-hour military`. Map: `12h` / `24h`.
-
-Then run `update_settings.py --idle <chosen> --format <chosen>` to apply.
+1. Print current settings by running:
+   ```bash
+   python <skill-path>/scripts/update_settings.py
+   ```
+2. Show the user the current values as a table.
+3. Use `AskUserQuestion` to ask: "Change a setting?" with options:
+   - `Idle reset hours`
+   - `Time format`
+   - `No change` (cancel)
+4. If `Idle reset hours`: ask via `AskUserQuestion` with options `1 hour`, `4 hours`, `8 hours`, `24 hours`, `Never`. Map their pick to the matching arg (`--idle 1` / `--idle 4` / `--idle 8` / `--idle 24` / `--idle never`).
+5. If `Time format`: ask via `AskUserQuestion` with options `12-hour AM/PM`, `24-hour military`. Map to `--format 12h` or `--format 24h`.
+6. Run `update_settings.py` with the chosen flag(s).
 
 **Output format (exact):**
 
@@ -31,6 +33,6 @@ Then run `update_settings.py --idle <chosen> --format <chosen>` to apply.
 
 If any settings changed, prepend:
 
-> _Updated: {changed keys}._
+> _Updated: {comma-list of changed keys}._
 
-No commentary outside the table.
+No commentary outside the table or that one-line update notice.

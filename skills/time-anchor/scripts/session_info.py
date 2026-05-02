@@ -14,6 +14,7 @@ import sys
 from datetime import datetime
 
 from _common import (
+    count_claude_processes,
     emit,
     format_human,
     format_short_time,
@@ -46,6 +47,7 @@ def main() -> int:
 
     idle_hours = settings.get("idle_reset_hours")
     idle_label = "never" if not idle_hours else f"{idle_hours}h"
+    terminal_count = count_claude_processes()
 
     emit(
         {
@@ -58,6 +60,7 @@ def main() -> int:
             "elapsed_seconds": elapsed_seconds,
             "elapsed_human": humanize_duration(elapsed_seconds),
             "lifetime_command_count": data.get("lifetime_command_count", 0),
+            "active_terminals": terminal_count,
             "idle_reset_hours": idle_hours,
             "idle_reset_label": idle_label,
             "time_format": fmt,

@@ -216,3 +216,27 @@ def touch_session(data: dict[str, Any], now: datetime) -> dict[str, Any]:
     session["last_active_at"] = now_iso
     data["lifetime_command_count"] = int(data.get("lifetime_command_count", 0)) + 1
     return info
+
+
+def count_claude_processes() -> int | None:
+    """Best-effort count of running `claude` (Claude Code) processes on the host.
+
+    Returns None if detection fails (we don't pretend zero in that case).
+    """
+    import subprocess
+    import sys
+
+    try:
+        if sys.platform == "win32":
+            out = subprocess.check_output(
+                ["powershell", "-NoProfile", "-Command",
+                 "@(Get-Process -Name claude -ErrorAction SilentlyContinue).Count"],
+                text=True, timeout=3, stderr=subprocess.DEVNULL)
+            return int(out.strip())
+        else:
+            out = subprocess.check_output(
+                ["pgrep", "-c", "-x", "claude"],
+                text=True, timeout=3, stderr=subprocess.DEVNULL)
+            return int(out.strip())
+    except Exception:
+        return None
