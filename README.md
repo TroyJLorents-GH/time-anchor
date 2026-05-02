@@ -12,6 +12,30 @@ It auto-detects your timezone on install (no API key, no network call), reads th
 
 ## Demo
 
+**Slash commands** — explicit, scriptable:
+
+```
+❯ /current-time
+Friday, May 1, 2026 at 10:01 PM MST (UTC-7).
+
+❯ /start-session-time
+Logged session start: 2026-05-01T21:43:00-07:00 · session_id 0f3c…
+
+❯ /set-timezone
+Detected America/Phoenix from your system. Use this? [Yes / Pick different]
+
+❯ /session-time
+Current session: started 9:43 PM MST, running 18 min, 12 messages.
+Recent sessions:
+  · 2026-04-30  19:12 → 19:48  (36 min)
+  · 2026-04-29  09:01 → 11:55  (2 hr 54 min)
+
+❯ /end-session-time
+Session closed. Duration: 1 hr 22 min.
+```
+
+**Or natural language** — Claude auto-invokes the skill:
+
 ```
 You: what time is it?
 Claude: Friday, May 1, 2026 at 10:01 PM MST.
