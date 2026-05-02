@@ -17,24 +17,30 @@ Use the time-anchor skill to set or **change** the user's timezone.
 
 **3. Free-text path.** If detection fails or user picks "different", ask in chat: *"What city, country, or region are you in?"*
 
-Map their answer using `references/country_zones.md` (ordered country lists for multi-zone countries) and `references/timezones.md` (full IANA list).
+Then run the lookup script — it returns the FULL ordered list of IANA zones for that country/territory from the bundled `assets/country_zones.json` (covers ~200 countries):
 
-**Show ALL zones for the country, never just the top 4.** Claude Code's `AskUserQuestion` tool caps at ~5 options per pick, so paginate:
+```bash
+python <skill-path>/scripts/lookup_country.py "<their answer>"
+```
 
-1. **Print the full numbered list of zones for that country in chat as plain markdown** (read directly from `references/country_zones.md`). The user must be able to see every option before selecting.
-2. **Then** show a paginated `AskUserQuestion`: first 4 zones + a `More zones (5–8)` option that re-prompts with the next batch + a final `Type IANA name directly` option that lets the user paste the canonical name from the printed list.
-3. Loop the picker until the user selects a zone.
+Output is JSON: `{"query": ..., "matched": ..., "zones": [...]}`.
+
+**Then present ALL zones to the user, not a truncated subset.** Claude Code's `AskUserQuestion` tool caps at ~5 options per pick, so:
+
+1. **Print the full numbered list** of every zone returned in chat as plain markdown so the user sees every option.
+2. **Then** show a paginated `AskUserQuestion`: 4 zones + `Show next batch` + (on final batch) `Type IANA name directly`.
+3. Loop until the user picks a zone, then call `set_timezone.py "<chosen>"`.
 
 | User input pattern | What to do |
 |---|---|
-| Single-zone country (India, Japan, UK, Germany) | Confirm the 1 canonical zone with Yes/No. |
-| Multi-zone country (US, Russia, Canada, Brazil, Australia, Mexico, Indonesia, Spain, Argentina, etc.) | Print full list from `country_zones.md`, then paginated picker as above. |
-| Specific city | Map directly to the matching IANA zone, confirm with Yes/No. |
-| Region (e.g. "Eastern Europe") | Print full list of zones in that region from `timezones.md`, then paginated picker. |
+| Country name (any of ~200 countries) | Run `lookup_country.py`, print full list, paginated picker. |
+| City name | Map directly to its IANA zone (`references/timezones.md`), confirm Yes/No. |
+| Region (e.g. "Eastern Europe", "Pacific Islands") | Print all matching zones from `references/timezones.md` for that region prefix, paginated picker. |
+| Single-zone country (most countries) | `lookup_country.py` returns 1 zone — confirm Yes/No. |
 
-**US-specific note:** `America/Phoenix` (Arizona, no-DST) MUST appear in the printed list and reachable via the picker — picking `America/Denver` for an Arizonan is wrong half the year.
+**US-specific note:** `lookup_country.py "United States"` returns 29 US zones starting with the 7 most common (Eastern, Central, Mountain w/ DST, **Phoenix no-DST**, Pacific, Alaska, Hawaii). Always page through to make `America/Phoenix` reachable — Arizona doesn't observe DST, so picking `America/Denver` for an Arizonan is wrong half the year.
 
-If a country has more zones than `country_zones.md` documents (e.g. less common ones in Antarctica, France's overseas territories), fall back to grepping `references/timezones.md` for the country code prefix and include all matches.
+**Fallback:** If `lookup_country.py` exits 1 (unknown country), tell the user, then ask them to clarify or type an IANA name directly. Never guess silently.
 
 **4. Save.** Once a zone is selected, call:
 
