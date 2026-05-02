@@ -1,0 +1,25 @@
+{
+  "name": "time-anchor-plugins",
+  "owner": {
+    "name": "Troy Lorents",
+    "email": "troy.j.lorents91@gmail.com",
+    "url": "https://github.com/TroyJLorents-GH"
+  },
+  "description": "Anchors Claude to the real, current time in the user's local timezone — auto-detects timezone, logs session boundaries, persists in memory.",
+  "plugins": [
+    {
+      "name": "time-anchor",
+      "source": ".",
+      "description": "Anchor Claude to the real, current time. Auto-detects host timezone, logs session start/end, persists in a memory file (its own or shared with another memory plugin).",
+      "version": "0.1.0",
+      "author": {
+        "name": "Troy Lorents",
+        "url": "https://github.com/TroyJLorents-GH"
+      },
+      "homepage": "https://github.com/TroyJLorents-GH/time-anchor",
+      "repository": "https://github.com/TroyJLorents-GH/time-anchor",
+      "license": "MIT",
+      "keywords": ["time", "timezone", "session-tracking", "memory", "iana"]
+    }
+  ]
+}
