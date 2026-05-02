@@ -25,7 +25,7 @@ python <skill-path>/scripts/session_info.py 50
 | Started | {current_session.started_human} |
 | Elapsed | {current_session.elapsed_human} |
 | Messages | {current_session.message_count} |
-| Total sessions | {total_sessions} |
+| Active terminals | {active_count} |
 
 **Active sessions (across all Claude Code instances):**
 
@@ -55,4 +55,4 @@ If `current_session` is null, replace the first table with:
 |---|---|
 | Now | {now_human} |
 | Current | _none active in this Claude Code instance — run `/start-session-time` to log a new one_ |
-| Total sessions | {total_sessions} |
+| Active terminals | {active_count} |

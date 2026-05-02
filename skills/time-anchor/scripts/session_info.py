@@ -95,6 +95,8 @@ def main() -> int:
             "message_count": len(current_record.get("messages", [])),
         }
 
+    active_count = sum(1 for s in sessions if not s.get("ended_at"))
+
     emit(
         {
             "now": now.isoformat(timespec="seconds"),
@@ -103,6 +105,7 @@ def main() -> int:
             "timezone": data["timezone"],
             "claude_session_id": claude_session_id,
             "total_sessions": len(sessions),
+            "active_count": active_count,
             "current_session": current,
             "recent_sessions": [_enrich(s, now, tz) for s in recent_raw],
         }
