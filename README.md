@@ -26,20 +26,34 @@ Claude: This session started at 9:43 PM MST. We've been at it for 18 minutes.
 
 ## Install
 
-### One-line install (recommended)
+### One-liner (recommended — works on any machine)
 
-In any Claude Code session:
+Pure HTTPS download. No git, no SSH, no plugin marketplace, no auth setup.
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/TroyJLorents-GH/time-anchor/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/TroyJLorents-GH/time-anchor/main/install.ps1 | iex
+```
+
+The installer downloads the latest release as a tarball/zip, extracts the skill into `~/.claude/skills/time-anchor`, and copies the slash commands into `~/.claude/commands/`. Restart Claude Code. First run auto-detects your timezone.
+
+### Plugin install (for Claude Code's `/plugin` system)
+
+If your Claude Code version supports plugin marketplaces and you've configured GitHub access (HTTPS or SSH known_hosts), you can install through the marketplace:
 
 ```
 /plugin marketplace add TroyJLorents-GH/time-anchor
 /plugin install time-anchor@time-anchor-plugins
 ```
 
-Restart Claude Code. The first time the skill runs, it will auto-detect your timezone and ask you to confirm.
+When installed this way, slash commands are namespaced as `/time-anchor:current-time`, `/time-anchor:set-timezone`, etc.
 
 ### Manual install
-
-If you'd rather drop it into your global skills directory directly:
 
 ```bash
 git clone https://github.com/TroyJLorents-GH/time-anchor.git
