@@ -100,6 +100,76 @@ cp -r time-anchor/skills/time-anchor ~/.claude/skills/time-anchor
 cp time-anchor/commands/*.md ~/.claude/commands/
 ```
 
+## Enable auto session tracking (optional but recommended)
+
+By default, sessions only log when you manually run `/start-session-time` and `/end-session-time`. To make every Claude Code launch automatically log a session start, and every exit auto-close it, add `SessionStart` and `Stop` hooks to your `~/.claude/settings.json`.
+
+Multi-window aware: each terminal's hooks pass `$CLAUDE_SESSION_ID` to the scripts, so closing one terminal only ends that terminal's session — other open terminals stay tracked correctly.
+
+**Add to `~/.claude/settings.json`** (merge under existing top-level object — don't replace):
+
+**Windows:**
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/YOUR_USERNAME/.claude/skills/time-anchor/scripts/start_session.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/YOUR_USERNAME/.claude/skills/time-anchor/scripts/end_session.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+(Use forward slashes — bash on Windows escapes backslashes in paths and breaks the hook.)
+
+**macOS / Linux:**
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/skills/time-anchor/scripts/start_session.py"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/skills/time-anchor/scripts/end_session.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+After saving, restart Claude Code. Every new session auto-logs a start; every exit auto-closes. `/session-time` will show your current terminal's session as active and a growing count of total sessions.
+
+**Already have terminals open?** Run `/start-session-time` once in each existing terminal to register it under the new tracking. Or just close and reopen as you finish tasks — the `SessionStart` hook will fire for each new launch.
+
 ## Slash commands
 
 | Command | What it does |
