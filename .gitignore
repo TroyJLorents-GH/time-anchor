@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+
+# Local Claude Code workspace state
+.claude/
+
+# Runtime memory files (created at install, not source)
+memory.json
+skills/time-anchor/memory.json

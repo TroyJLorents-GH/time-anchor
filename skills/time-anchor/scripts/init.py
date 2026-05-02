@@ -15,10 +15,10 @@ def main() -> int:
             f"memory_path: {path}\n"
             f"backend: {backend}\n"
             f"\n"
-            f"No timezone is recorded yet. Ask the user for their timezone "
-            f"(see references/timezones.md), then run:\n"
-            f"  python set_timezone.py <IANA_NAME>\n"
-            f"e.g. python set_timezone.py America/Chicago",
+            f"No timezone is recorded yet. Run setup flow:\n"
+            f"  1. python detect_timezone.py    (auto-detects from host OS)\n"
+            f"  2. Confirm with user via AskUserQuestion (or ask free-text city/country)\n"
+            f"  3. python set_timezone.py <IANA_NAME>",
             file=sys.stderr,
         )
         return 2

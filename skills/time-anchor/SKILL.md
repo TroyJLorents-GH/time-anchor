@@ -43,22 +43,34 @@ python /path/to/time-anchor/scripts/init.py
 2. If no timezone is recorded, prints `STATUS: NEEDS_SETUP` and exits non-zero.
 3. If a timezone IS recorded, prints the current memory state as JSON and exits 0.
 
-When `init.py` returns `NEEDS_SETUP`, walk the user through timezone selection. Ask them in two steps to keep it scannable on mobile:
+When `init.py` returns `NEEDS_SETUP`, run the three-stage setup flow. Do **not** print a numbered list of "common picks" — Claude Code has no native searchable picker, so quick-pick lists are noise.
 
-**Step 1 — region:** Show the high-level regions and let them pick:
-- Africa, America, Antarctica, Asia, Atlantic, Australia, Europe, Indian, Pacific, UTC
-
-Use the `ask_user_input_v0` tool with these as options (split into two questions if needed since the tool caps at 4 options per question).
-
-**Step 2 — specific zone:** Read `references/timezones.md` and show the zones for the chosen region. For large regions (America, Asia, Europe) offer the most populated 4 first with an "other" option that lists the rest.
-
-Then save with:
+**Stage 1 — auto-detect.** Run:
 
 ```bash
-python /path/to/time-anchor/scripts/set_timezone.py "America/New_York"
+python /path/to/time-anchor/scripts/detect_timezone.py
 ```
 
-This validates the timezone string against the IANA database (via Python's `zoneinfo`) and rejects invalid ones. After saving, run `start_session.py` to log the session start.
+Output is JSON with `best`, `candidates`, and `raw` fields. `best` is the most reliable IANA name detected from the host OS (uses `$TZ`, `/etc/timezone`, `/etc/localtime`, or `tzutil /g` + the bundled CLDR map in `assets/windows_zones.json`). Detection covers ~85% of users silently.
+
+**Stage 2 — confirm.** If `best` is non-null, ask the user with the `AskUserQuestion` tool — exactly two options:
+
+- `Use {best.timezone}` — accept the detected zone
+- `Pick a different one` — fall through to stage 3
+
+If the user accepts, jump straight to `set_timezone.py`. If `best` is null, skip to stage 3.
+
+**Stage 3 — free-text fallback.** Ask the user a short open question via `AskUserQuestion` with `multiSelect: false` and no preset options (or just ask in chat): *"What city or country are you in?"*
+
+Take their answer (e.g. "Phoenix", "Bangalore", "near Munich") and map it to the correct IANA name. Use `references/timezones.md` for the canonical list — it has all 498 IANA zones grouped by region. Pick the zone for the closest major city in their UTC offset. If ambiguous, ask one clarifying question.
+
+**Then save:**
+
+```bash
+python /path/to/time-anchor/scripts/set_timezone.py "America/Phoenix"
+```
+
+`set_timezone.py` validates the IANA name via Python's `zoneinfo` and rejects invalid input. After it saves, run `start_session.py` to log the session start.
 
 ## Daily operations
 
