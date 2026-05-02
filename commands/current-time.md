@@ -2,6 +2,22 @@
 description: Show the current local time in the user's timezone (via time-anchor skill)
 ---
 
-Use the time-anchor skill to fetch and report the current local time.
+Run `now.py` and render its output as the markdown table below. Use ONLY the canonical fields the script emits — do not reformat ISO strings or guess timezone abbreviations yourself.
 
-Run `now.py` and present the `human` field of the JSON output to the user. If the timezone is not yet set (script returns an error), invoke the `/set-timezone` flow first.
+```bash
+python <skill-path>/scripts/now.py
+```
+
+**Output format (exact):**
+
+| Field | Value |
+|---|---|
+| Now | {human} |
+| Timezone | {timezone} ({tz_label}, UTC{utc_offset hh:mm}) |
+| ISO | {iso} |
+| UTC | {utc_iso} |
+| DST | {"yes" if is_dst else "no"} |
+
+No commentary, no extra prose. Just the table.
+
+If the script errors with `no timezone set`, tell the user to run `/set-timezone` first.

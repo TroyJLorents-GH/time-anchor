@@ -3,26 +3,39 @@ description: Show current session info and recent sessions from time-anchor
 argument-hint: "[N — number of recent sessions to include, default 5]"
 ---
 
-Use the time-anchor skill to show session info.
-
 Run `session_info.py $ARGUMENTS` (default to `5` if no argument).
 
-**Render rules — do not reformat the time:**
+**Render rules — do NOT reformat timestamps:**
 
-- Use the script's `now_human` field verbatim for the timestamp line. Do NOT rebuild it from the ISO string — Claude reformats inconsistently across sessions and sometimes hallucinates the wrong tz abbreviation (e.g. "PDT" for Phoenix, which is MST year-round).
-- Use the script's `tz_label` field for any "MST"/"PST"/etc abbreviations.
-- Show `claude_session_id` (the Claude Code instance ID) below the time-anchor `session_id` when reporting the current session, so users can debug multi-window confusion.
+- Use the script's canonical `now_human`, `started_human`, `ended_human`, `elapsed_human`, `duration_human` fields verbatim.
+- Use `tz_label` for any timezone abbreviation. Never infer "PDT"/"EDT"/etc — the script tells you exactly what to display.
+- Render output as two markdown tables exactly as below — no extra prose, no commentary, no offers to verify.
 
-**Output format (terse — no commentary, no offers to verify):**
+**Output format (exact):**
 
-```
-{now_human}
+| Field | Value |
+|---|---|
+| Now | {now_human} |
+| Current session | `{current_session.session_id}` |
+| Claude instance | {current_session.claude_session_id} |
+| Started | {current_session.started_human} |
+| Elapsed | {current_session.elapsed_human} |
+| Messages | {current_session.message_count} |
+| Total sessions | {total_sessions} |
 
-Current: {session_id} (claude {claude_session_id}) · started {recent.started_at} · elapsed {format duration} · {message_count} msgs
-Total sessions: {total_sessions}
+**Recent sessions:**
 
-Recent:
-  · {session_id}  {started_at} → {ended_at or "active"}  ({duration})
-```
+| ID | Started | Ended | Duration |
+|---|---|---|---|
+| `{session_id}` | {started_human} | {ended_human or "active"} | {duration_human} |
+| ... |
 
-If `current_session` is null, report `Current: none active in this Claude Code instance.` and still render the recent table.
+If `current_session` is null, replace the first table's body with a single row:
+
+| Field | Value |
+|---|---|
+| Now | {now_human} |
+| Current | _none active in this Claude Code instance_ |
+| Total sessions | {total_sessions} |
+
+Then still render the recent table as normal.

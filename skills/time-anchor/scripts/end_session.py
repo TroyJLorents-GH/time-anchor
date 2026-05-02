@@ -11,7 +11,16 @@ ending a session that belongs to another open window.
 import sys
 from datetime import datetime
 
-from _common import emit, get_claude_instance_id, get_timezone, load_memory, save_memory
+from _common import (
+    emit,
+    format_human,
+    format_short_time,
+    get_claude_instance_id,
+    get_timezone,
+    humanize_duration,
+    load_memory,
+    save_memory,
+)
 
 
 def main() -> int:
@@ -56,6 +65,7 @@ def main() -> int:
     target["ended_at"] = now.isoformat(timespec="seconds")
 
     started = datetime.fromisoformat(target["started_at"])
+    started_local = started.astimezone(tz)
     duration_seconds = int((now - started).total_seconds())
 
     save_memory(data, path, backend)
@@ -67,23 +77,17 @@ def main() -> int:
             "session_id": target["session_id"],
             "claude_session_id": target.get("claude_session_id"),
             "started_at": target["started_at"],
+            "started_human": format_short_time(started_local),
             "ended_at": target["ended_at"],
+            "ended_human": format_short_time(now),
+            "now_human": format_human(now),
             "duration_seconds": duration_seconds,
-            "duration_human": _humanize(duration_seconds),
+            "duration_human": humanize_duration(duration_seconds),
             "message_count": len(target.get("messages", [])),
             "tz_label": now.strftime("%Z"),
         }
     )
     return 0
-
-
-def _humanize(seconds: int) -> str:
-    if seconds < 60:
-        return f"{seconds}s"
-    if seconds < 3600:
-        return f"{seconds // 60}m {seconds % 60}s"
-    hours, rem = divmod(seconds, 3600)
-    return f"{hours}h {rem // 60}m"
 
 
 if __name__ == "__main__":

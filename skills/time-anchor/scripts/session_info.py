@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Show info about the current session and recent history.
 
-"Current session" is the record matching `$CLAUDE_SESSION_ID` if available
-(multi-window aware). Falls back to the most-recent-open untracked record
-if no env var is set.
+"Current session" is the record matching this Claude Code instance's
+identifier (CLAUDE_CODE_SSE_PORT) when available — multi-window aware.
 
-Always emits canonical `now_human` and `tz_label` fields so callers can
-render time consistently without reformatting the ISO string themselves.
+Always emits canonical `now_human`, `tz_label`, and per-session
+`started_human`/`ended_human`/`duration_human` fields so callers render
+time consistently without reformatting any ISO strings themselves.
 
 Optional argument: number of recent sessions to include (default 3).
 """
@@ -14,7 +14,39 @@ Optional argument: number of recent sessions to include (default 3).
 import sys
 from datetime import datetime
 
-from _common import emit, get_claude_instance_id, get_timezone, load_memory
+from _common import (
+    emit,
+    format_human,
+    format_short_time,
+    get_claude_instance_id,
+    get_timezone,
+    humanize_duration,
+    load_memory,
+)
+
+
+def _enrich(record: dict, now: datetime, tz) -> dict:
+    """Add human-formatted fields to a session record for table rendering."""
+    started = datetime.fromisoformat(record["started_at"])
+    started_local = started.astimezone(tz)
+    enriched = {
+        "session_id": record["session_id"],
+        "claude_session_id": record.get("claude_session_id"),
+        "started_at": record["started_at"],
+        "started_human": format_short_time(started_local),
+        "ended_at": record.get("ended_at"),
+        "ended_human": None,
+        "duration_human": None,
+        "messages": record.get("messages", []),
+    }
+    if record.get("ended_at"):
+        ended = datetime.fromisoformat(record["ended_at"])
+        ended_local = ended.astimezone(tz)
+        enriched["ended_human"] = format_short_time(ended_local)
+        enriched["duration_human"] = humanize_duration(int((ended - started).total_seconds()))
+    else:
+        enriched["duration_human"] = humanize_duration(int((now - started).total_seconds())) + " (active)"
+    return enriched
 
 
 def main() -> int:
@@ -28,7 +60,7 @@ def main() -> int:
 
     now = datetime.now(tz)
     sessions = data.get("sessions", [])
-    recent = sessions[-n:] if sessions else []
+    recent_raw = sessions[-n:] if sessions else []
     claude_session_id = get_claude_instance_id()
 
     current_record = None
@@ -38,8 +70,6 @@ def main() -> int:
                 current_record = s
                 break
 
-    # Legacy fallback: only consider untracked open records "current" when
-    # we don't have a CLAUDE_SESSION_ID to compare against.
     if current_record is None and not claude_session_id:
         for s in reversed(sessions):
             if not s.get("ended_at") and "claude_session_id" not in s:
@@ -49,29 +79,28 @@ def main() -> int:
     current = None
     if current_record:
         started = datetime.fromisoformat(current_record["started_at"])
+        started_local = started.astimezone(tz)
+        elapsed_seconds = int((now - started).total_seconds())
         current = {
             "session_id": current_record["session_id"],
             "claude_session_id": current_record.get("claude_session_id"),
             "started_at": current_record["started_at"],
-            "elapsed_seconds": int((now - started).total_seconds()),
+            "started_human": format_short_time(started_local),
+            "elapsed_seconds": elapsed_seconds,
+            "elapsed_human": humanize_duration(elapsed_seconds),
             "message_count": len(current_record.get("messages", [])),
         }
-
-    try:
-        now_human = now.strftime("%A, %B %-d, %Y at %-I:%M %p %Z")
-    except ValueError:
-        now_human = now.strftime("%A, %B %d, %Y at %I:%M %p %Z")
 
     emit(
         {
             "now": now.isoformat(timespec="seconds"),
-            "now_human": now_human,
+            "now_human": format_human(now),
             "tz_label": now.strftime("%Z"),
             "timezone": data["timezone"],
             "claude_session_id": claude_session_id,
             "total_sessions": len(sessions),
             "current_session": current,
-            "recent_sessions": recent,
+            "recent_sessions": [_enrich(s, now, tz) for s in recent_raw],
         }
     )
     return 0

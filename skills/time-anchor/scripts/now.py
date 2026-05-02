@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Print the current time in the user's stored timezone, plus UTC.
 
-Output is JSON with both ISO and human-readable forms. Use the human field
-when speaking to the user; use iso when computing or comparing.
+Output is JSON with both ISO and human-readable forms. Always use the
+canonical `human` field verbatim — do not reformat the ISO string yourself
+(callers across Claude turns drift if they do).
 """
 
 import sys
 from datetime import datetime, timezone
 
-from _common import emit, get_timezone, load_memory
+from _common import emit, format_human, get_timezone, load_memory
 
 
 def main() -> int:
-    data, path, backend = load_memory()
+    data, _, _ = load_memory()
     tz = get_timezone(data)
 
     if tz is None:
@@ -25,17 +26,12 @@ def main() -> int:
     local = datetime.now(tz)
     utc = datetime.now(timezone.utc)
 
-    # %-I and %-d are GNU-only; fall back gracefully on Windows
-    try:
-        human = local.strftime("%A, %B %-d, %Y at %-I:%M %p %Z")
-    except ValueError:
-        human = local.strftime("%A, %B %d, %Y at %I:%M %p %Z")
-
     emit(
         {
             "timezone": data["timezone"],
             "iso": local.isoformat(timespec="seconds"),
-            "human": human,
+            "human": format_human(local),
+            "tz_label": local.strftime("%Z"),
             "utc_iso": utc.isoformat(timespec="seconds").replace("+00:00", "Z"),
             "weekday": local.strftime("%A"),
             "is_dst": bool(local.dst()),

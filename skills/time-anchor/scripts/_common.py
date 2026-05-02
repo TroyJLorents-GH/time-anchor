@@ -114,6 +114,46 @@ def emit(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, indent=2, default=str))
 
 
+def format_human(dt: datetime) -> str:
+    """Format a tz-aware datetime as 'Saturday, May 2, 2026 at 2:29 PM MST'.
+
+    Built manually rather than via strftime to avoid:
+      - Leading zeros (Windows %d/%I always pad; GNU %-d/%-I is platform-specific)
+      - Inconsistent rendering across Claude turns when callers reformat the
+        ISO string themselves.
+    """
+    weekday = dt.strftime("%A")
+    month = dt.strftime("%B")
+    day = dt.day
+    year = dt.year
+    hour_12 = dt.hour % 12 or 12
+    minute = f"{dt.minute:02d}"
+    ampm = "AM" if dt.hour < 12 else "PM"
+    tz_label = dt.strftime("%Z") or ""
+    suffix = f" {tz_label}" if tz_label else ""
+    return f"{weekday}, {month} {day}, {year} at {hour_12}:{minute} {ampm}{suffix}"
+
+
+def format_short_time(dt: datetime) -> str:
+    """Format a datetime as '2:29 PM MST' — used in compact table cells."""
+    hour_12 = dt.hour % 12 or 12
+    minute = f"{dt.minute:02d}"
+    ampm = "AM" if dt.hour < 12 else "PM"
+    tz_label = dt.strftime("%Z") or ""
+    suffix = f" {tz_label}" if tz_label else ""
+    return f"{hour_12}:{minute} {ampm}{suffix}"
+
+
+def humanize_duration(seconds: int) -> str:
+    """Format a duration as '2h 14m' / '14m 23s' / '6s'."""
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m {seconds % 60}s"
+    hours, rem = divmod(seconds, 3600)
+    return f"{hours}h {rem // 60}m"
+
+
 def get_claude_instance_id() -> str | None:
     """Best-effort identifier for the current Claude Code instance.
 

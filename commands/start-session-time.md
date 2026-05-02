@@ -2,6 +2,20 @@
 description: Log the start of this session in time-anchor
 ---
 
-Use the time-anchor skill to log the session start.
+Run `start_session.py` and render the result as a markdown table. Use the script's canonical `now_human` and `started_human` fields verbatim. Do not reformat any timestamps yourself.
 
-Run `start_session.py` and report the new `session_id` and start timestamp to the user. If a session was already open within the last 30 minutes, the script reuses it — mention that to the user instead of pretending a new one was created.
+```bash
+python <skill-path>/scripts/start_session.py
+```
+
+**Output format (exact):**
+
+| Field | Value |
+|---|---|
+| Now | {now_human} |
+| Session ID | `{session_id}` |
+| Claude instance | {claude_session_id} |
+| Started | {started_human} |
+| Reused | {"yes — existing open session for this Claude Code instance" if reused else "no — fresh session"} |
+
+No commentary. Just the table.

@@ -12,7 +12,7 @@ import sys
 import uuid
 from datetime import datetime
 
-from _common import emit, get_claude_instance_id, get_timezone, load_memory, save_memory
+from _common import emit, format_human, format_short_time, get_claude_instance_id, get_timezone, load_memory, save_memory
 
 
 def main() -> int:
@@ -34,6 +34,8 @@ def main() -> int:
     if claude_session_id:
         for s in reversed(sessions):
             if s.get("claude_session_id") == claude_session_id and not s.get("ended_at"):
+                started = datetime.fromisoformat(s["started_at"])
+                started_local = started.astimezone(tz)
                 emit(
                     {
                         "ok": True,
@@ -41,7 +43,9 @@ def main() -> int:
                         "session_id": s["session_id"],
                         "claude_session_id": claude_session_id,
                         "started_at": s["started_at"],
+                        "started_human": format_short_time(started_local),
                         "now": now.isoformat(timespec="seconds"),
+                        "now_human": format_human(now),
                         "tz_label": now.strftime("%Z"),
                     }
                 )
@@ -64,7 +68,9 @@ def main() -> int:
             "session_id": new_session["session_id"],
             "claude_session_id": claude_session_id,
             "started_at": new_session["started_at"],
+            "started_human": format_short_time(now),
             "now": now.isoformat(timespec="seconds"),
+            "now_human": format_human(now),
             "tz_label": now.strftime("%Z"),
         }
     )
