@@ -36,11 +36,13 @@ Filter `recent_sessions` to entries where `ended_at` is null. Render as:
 | `{session_id}` | {started_human} | {duration_human} | {claude_session_id or "—"} |
 | ... |
 
-If no other active sessions besides current, render: _Only this terminal._
+If no other active sessions besides current, render: _Only this terminal is currently tracked. Other terminals you have open won't appear here until they run `/start-session-time` once._
 
 **Recently closed sessions:**
 
-Only render this section if the user passed `$ARGUMENTS` as a positive integer N. Filter `recent_sessions` to entries WITH `ended_at`, take the LAST N.
+**Render this section ONLY when `$ARGUMENTS` is a positive integer N.** If `$ARGUMENTS` is empty or zero, omit this entire section — do not show any closed sessions. The default `/session-time` (no arg) is the active-only view.
+
+When N is provided: filter `recent_sessions` to entries WITH `ended_at`, take the LAST N.
 
 | ID | Started | Ended | Duration |
 |---|---|---|---|
