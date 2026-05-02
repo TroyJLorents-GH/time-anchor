@@ -10,8 +10,8 @@
     {
       "name": "time-anchor",
       "source": {
-        "source": "git",
-        "url": "https://github.com/TroyJLorents-GH/time-anchor.git"
+        "source": "github",
+        "repo": "TroyJLorents-GH/time-anchor"
       },
       "description": "Anchor Claude to the real, current time. Auto-detects host timezone, logs session start/end, persists in a memory file (its own or shared with another memory plugin).",
       "version": "0.1.0",
