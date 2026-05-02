@@ -65,14 +65,18 @@ def main() -> int:
 
     current_record = None
     if claude_session_id:
+        # Match by Claude Code instance id (CLAUDE_CODE_SSE_PORT)
         for s in reversed(sessions):
             if s.get("claude_session_id") == claude_session_id and not s.get("ended_at"):
                 current_record = s
                 break
-
-    if current_record is None and not claude_session_id:
+    else:
+        # No env var available (e.g. CC launched via --resume). Match the
+        # most recent open record that ALSO has no instance id — covers
+        # both legacy untracked records and modern records written with
+        # claude_session_id: null.
         for s in reversed(sessions):
-            if not s.get("ended_at") and "claude_session_id" not in s:
+            if not s.get("ended_at") and not s.get("claude_session_id"):
                 current_record = s
                 break
 

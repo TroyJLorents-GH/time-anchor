@@ -40,13 +40,12 @@ def main() -> int:
             if s.get("claude_session_id") == claude_session_id and not s.get("ended_at"):
                 target = s
                 break
-
-    # Legacy fallback: only close untracked open sessions (no claude_session_id
-    # field at all). Never close a session that belongs to a different known
-    # Claude Code instance.
-    if target is None and not claude_session_id:
+    else:
+        # No env var available (e.g. claude --resume mode). Close the most
+        # recent open record that also has no instance id — covers legacy
+        # untracked and modern null records.
         for s in reversed(sessions):
-            if not s.get("ended_at") and "claude_session_id" not in s:
+            if not s.get("ended_at") and not s.get("claude_session_id"):
                 target = s
                 break
 

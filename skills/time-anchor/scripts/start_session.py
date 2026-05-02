@@ -31,9 +31,16 @@ def main() -> int:
     claude_session_id = get_claude_instance_id()
 
     # If we already have an open record for this Claude Code instance, reuse it.
-    if claude_session_id:
+    # When env var is missing (claude --resume mode) we still want to reuse the
+    # most recent untagged-open record rather than create a new one each call.
+    reuse_predicate = (
+        (lambda s: s.get("claude_session_id") == claude_session_id)
+        if claude_session_id
+        else (lambda s: not s.get("claude_session_id"))
+    )
+    if True:
         for s in reversed(sessions):
-            if s.get("claude_session_id") == claude_session_id and not s.get("ended_at"):
+            if reuse_predicate(s) and not s.get("ended_at"):
                 started = datetime.fromisoformat(s["started_at"])
                 started_local = started.astimezone(tz)
                 emit(
