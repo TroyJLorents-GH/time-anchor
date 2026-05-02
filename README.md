@@ -1,10 +1,14 @@
-# time-anchor
+<div align="center">
+
+# 🕛 time-anchor
 
 > Anchor Claude to the real, current time in your local timezone.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Plugin format: Claude Code](https://img.shields.io/badge/Claude_Code-plugin-7C3AED.svg)](https://claude.com/claude-code)
 [![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](.claude-plugin/plugin.json)
+
+</div>
 
 Claude has no built-in clock. Each session starts cold, training data is frozen in time, and any "current time" Claude states from memory is a hallucination. **time-anchor** fixes that.
 
