@@ -45,6 +45,12 @@ def main() -> int:
 
     save_memory(data, path, backend)
 
+    # %-I and %-d are GNU-only; fall back gracefully on Windows
+    try:
+        human = now.strftime("%A, %B %-d, %Y at %-I:%M %p %Z")
+    except ValueError:
+        human = now.strftime("%A, %B %d, %Y at %I:%M %p %Z")
+
     emit(
         {
             "ok": True,
@@ -52,7 +58,7 @@ def main() -> int:
             "previous_timezone": previous,
             "first_install": is_first_install,
             "now": now.isoformat(),
-            "human": now.strftime("%A, %B %-d, %Y at %-I:%M %p %Z"),
+            "human": human,
             "memory_path": str(path),
             "backend": backend,
         }
