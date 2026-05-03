@@ -16,12 +16,21 @@ Auto-detects your timezone on install (no API key, no network call), reads the h
 
 ## Install
 
-**Windows (PowerShell):**
+**Recommended — Claude Code plugin marketplace** (works everywhere, handles updates):
+
+```
+/plugin marketplace add TroyJLorents-GH/time-anchor
+/plugin install time-anchor@time-anchor-plugins
+```
+
+**Or one-liner installer** (no GitHub auth needed, copies files directly):
+
+Windows (PowerShell):
 ```powershell
 iwr -useb https://raw.githubusercontent.com/TroyJLorents-GH/time-anchor/main/install.ps1 | iex
 ```
 
-**macOS / Linux:**
+macOS / Linux:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/TroyJLorents-GH/time-anchor/main/install.sh | bash
 ```
@@ -159,13 +168,6 @@ State persists in `~/.claude/skills/time-anchor/memory.json` (per-user, local on
 **Does session time track per-terminal?** No. Single rolling session across all your Claude Code activity. We tried per-terminal in v0.1; it created confusion (orphan records, cross-terminal collisions, version-dependent env-var quirks). v0.2 simplified to one rolling session — much less to think about.
 
 **Can I share session data with another memory plugin?** Yes — set `$TIME_ANCHOR_MEMORY_PATH` to that plugin's JSON file. time-anchor namespaces under a `time_anchor` key so it doesn't clobber the host plugin's data.
-
-**Can I install via `/plugin`?** Yes:
-```
-/plugin marketplace add TroyJLorents-GH/time-anchor
-/plugin install time-anchor@time-anchor-plugins
-```
-The one-liner above is more universal (no GitHub auth needed).
 
 ## What's new in v0.2
 
