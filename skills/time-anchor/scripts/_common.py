@@ -227,7 +227,11 @@ def touch_session(data: dict[str, Any], now: datetime) -> dict[str, Any]:
 
 
 def count_claude_processes() -> int | None:
-    """Best-effort count of running `claude` (Claude Code) processes on the host.
+    """Best-effort count of running Claude Code CLI processes on the host.
+
+    Filters by command line path so the Electron desktop app (which also
+    runs as `Claude.exe` and spawns many child processes — crashpad,
+    gpu, renderer, utility) doesn't inflate the count.
 
     Returns None if detection fails (we don't pretend zero in that case).
     """
@@ -236,14 +240,17 @@ def count_claude_processes() -> int | None:
 
     try:
         if sys.platform == "win32":
+            ps = (
+                "@(Get-CimInstance Win32_Process -Filter \"Name='claude.exe'\" "
+                "| Where-Object { $_.CommandLine -like '*claude-code*' }).Count"
+            )
             out = subprocess.check_output(
-                ["powershell", "-NoProfile", "-Command",
-                 "@(Get-Process -Name claude -ErrorAction SilentlyContinue).Count"],
-                text=True, timeout=3, stderr=subprocess.DEVNULL)
+                ["powershell", "-NoProfile", "-Command", ps],
+                text=True, timeout=5, stderr=subprocess.DEVNULL)
             return int(out.strip())
         else:
             out = subprocess.check_output(
-                ["pgrep", "-c", "-x", "claude"],
+                ["pgrep", "-cf", "claude-code"],
                 text=True, timeout=3, stderr=subprocess.DEVNULL)
             return int(out.strip())
     except Exception:

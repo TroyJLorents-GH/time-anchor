@@ -101,6 +101,16 @@ python <skill-path>/scripts/reset_session.py
 
 Sets `started_at` to now. For when the user wants to start a fresh "session" without waiting for idle.
 
+### Clean up zombie processes
+
+```bash
+python <skill-path>/scripts/cleanup_processes.py                  # list only
+python <skill-path>/scripts/cleanup_processes.py --kill-orphans   # kill processes started > 4h ago
+python <skill-path>/scripts/cleanup_processes.py --kill-all       # kill every claude-code proc except current ancestor
+```
+
+On Windows, closing a terminal window via the X button leaks the `claude.exe` process — it keeps running in the background. The script walks the parent chain of the running Python to identify which `claude.exe` is the current terminal's ancestor, preserves that one, and kills the rest based on the chosen mode. Use `/cleanup-claude-processes` for the interactive flow.
+
 ### View or change settings
 
 ```bash

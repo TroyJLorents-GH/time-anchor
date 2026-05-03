@@ -68,9 +68,10 @@ Claude: Saturday, May 2, 2026 at 4:19 PM MST.
 |---|---|
 | `/current-time` | Print the current local time |
 | `/set-timezone [IANA]` | Set or change timezone — auto-detect + country picker. Pass `America/Phoenix` etc. to skip the picker. |
-| `/session-time` | Show the rolling session: started, elapsed, total commands, active terminals. Auto-resets after idle threshold. |
+| `/session-time` | Show the rolling session: started, elapsed, total commands, Claude Code processes. Auto-resets after idle threshold. |
 | `/reset-session` | Manually reset the session timer to now |
 | `/time-anchor-settings` | View or change settings — idle reset hours, time format. Interactive picker, no flags needed. |
+| `/cleanup-claude-processes` | Find and kill stale Claude Code processes (zombies from terminals closed via X button on Windows). |
 
 ## How sessions work (it's just one)
 
@@ -129,7 +130,7 @@ Saturday, May 2, 2026 at 4:19 PM MST
 | Session started | 9:14 AM MST |
 | Elapsed | 7h 5m |
 | Total commands | 47 |
-| Active terminals | 3 |
+| Claude Code processes | 3 |
 | Idle reset | 4h |
 
 ❯ Claude, schedule a follow-up for tomorrow at 3pm
@@ -174,7 +175,8 @@ State persists in `~/.claude/skills/time-anchor/memory.json` (per-user, local on
 - Single rolling session (not per-terminal). Configurable idle reset.
 - Three time formats: `12h` (1:00 PM), `24h` (13:00), `military` (1300) — pickers show concrete examples so you don't need to know acronyms.
 - First-run setup wizard: timezone → idle reset → time format, all in one go.
-- `/session-time` shows live count of running `claude` processes (active terminals).
+- `/session-time` shows live count of `claude-code` host processes (filters out the Electron desktop app's children).
+- `/cleanup-claude-processes` finds and kills stale Claude Code processes leaked when terminals are closed via the X button on Windows.
 - New: `/reset-session`, `/time-anchor-settings`.
 - Removed: `/start-session-time`, `/end-session-time`, `/cleanup-sessions`, `/standup`. The session model is automatic now.
 - Removed: SessionStart hook requirement. Sessions auto-track on every command.
