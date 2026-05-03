@@ -52,12 +52,15 @@ def main() -> int:
             if val in ("12h", "12", "ampm", "am/pm"):
                 settings["time_format"] = "12h"
                 changed["time_format"] = "12h"
-            elif val in ("24h", "24", "military"):
+            elif val in ("24h", "24"):
                 settings["time_format"] = "24h"
                 changed["time_format"] = "24h"
+            elif val in ("military", "mil"):
+                settings["time_format"] = "military"
+                changed["time_format"] = "military"
             else:
                 print(
-                    f"ERROR: --format expects '12h' or '24h', got '{val}'",
+                    f"ERROR: --format expects '12h', '24h', or 'military', got '{val}'",
                     file=sys.stderr,
                 )
                 return 1

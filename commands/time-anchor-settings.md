@@ -21,7 +21,12 @@ If `$ARGUMENTS` is empty, run the interactive flow:
    - `Time format`
    - `No change` (cancel)
 4. If `Idle reset hours`: ask via `AskUserQuestion` with options `1 hour`, `4 hours`, `8 hours`, `24 hours`, `Never`. Map their pick to the matching arg (`--idle 1` / `--idle 4` / `--idle 8` / `--idle 24` / `--idle never`).
-5. If `Time format`: ask via `AskUserQuestion` with options `12-hour AM/PM`, `24-hour military`. Map to `--format 12h` or `--format 24h`.
+5. If `Time format`: ask via `AskUserQuestion` with three options, each labeled with a concrete example so the user doesn't have to know the acronyms:
+   - `12-hour AM/PM` → example: `1:00 PM`
+   - `24-hour` → example: `13:00`
+   - `Military` → example: `1300`
+
+   Map to `--format 12h`, `--format 24h`, or `--format military`.
 6. Run `update_settings.py` with the chosen flag(s).
 
 **Output format (exact):**

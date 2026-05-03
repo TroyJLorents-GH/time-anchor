@@ -129,16 +129,17 @@ def emit(payload: dict[str, Any]) -> None:
 
 
 def get_time_format(data: dict[str, Any]) -> str:
-    """Return user's preferred time format ('12h' or '24h')."""
+    """Return user's preferred time format ('12h', '24h', or 'military')."""
     fmt = data.get("settings", {}).get("time_format", DEFAULT_TIME_FORMAT)
-    return fmt if fmt in ("12h", "24h") else DEFAULT_TIME_FORMAT
+    return fmt if fmt in ("12h", "24h", "military") else DEFAULT_TIME_FORMAT
 
 
 def format_human(dt: datetime, fmt: str = DEFAULT_TIME_FORMAT) -> str:
     """Format a tz-aware datetime per user preference.
 
-    12h: 'Saturday, May 2, 2026 at 2:29 PM MST'
-    24h: 'Saturday, May 2, 2026 at 14:29 MST'
+    12h:      'Saturday, May 2, 2026 at 1:00 PM MST'
+    24h:      'Saturday, May 2, 2026 at 13:00 MST'
+    military: 'Saturday, May 2, 2026 at 1300 MST'
     """
     weekday = dt.strftime("%A")
     month = dt.strftime("%B")
@@ -147,6 +148,9 @@ def format_human(dt: datetime, fmt: str = DEFAULT_TIME_FORMAT) -> str:
     minute = f"{dt.minute:02d}"
     tz_label = dt.strftime("%Z") or ""
     suffix = f" {tz_label}" if tz_label else ""
+
+    if fmt == "military":
+        return f"{weekday}, {month} {day}, {year} at {dt.hour:02d}{minute}{suffix}"
 
     if fmt == "24h":
         hour_24 = f"{dt.hour:02d}"
@@ -160,12 +164,16 @@ def format_human(dt: datetime, fmt: str = DEFAULT_TIME_FORMAT) -> str:
 def format_short_time(dt: datetime, fmt: str = DEFAULT_TIME_FORMAT) -> str:
     """Format a datetime as compact time per user preference.
 
-    12h: '2:29 PM MST'
-    24h: '14:29 MST'
+    12h:      '1:00 PM MST'
+    24h:      '13:00 MST'
+    military: '1300 MST'
     """
     minute = f"{dt.minute:02d}"
     tz_label = dt.strftime("%Z") or ""
     suffix = f" {tz_label}" if tz_label else ""
+
+    if fmt == "military":
+        return f"{dt.hour:02d}{minute}{suffix}"
 
     if fmt == "24h":
         hour_24 = f"{dt.hour:02d}"

@@ -45,12 +45,31 @@ Returns JSON with `best` (most reliable IANA name) detected from `$TZ`, `/etc/ti
 
 **Stage 3 — free-text fallback.** Ask the user: *"What city or country are you in?"* Use `lookup_country.py` to get candidate IANA zones from `assets/country_zones.json` (covers ~200 countries). Print the full list, paginate the picker via `AskUserQuestion` (4 options + "Show next batch" / "Type IANA name").
 
-**Then save:**
+**Then save the timezone:**
 ```bash
 python <skill-path>/scripts/set_timezone.py "America/Phoenix"
 ```
 
-`set_timezone.py` validates the IANA name via Python's `zoneinfo`. After it saves, you're ready to use the skill.
+`set_timezone.py` validates the IANA name via Python's `zoneinfo`.
+
+**Stage 4 — first-run wizard: idle reset.** Use `AskUserQuestion`:
+
+> *"How long of idle time before your session timer resets? Every command bumps the timer; if you go idle longer than this, your next command starts a fresh session."*
+
+Options: `1 hour`, `4 hours` (default), `8 hours`, `24 hours`, `Never` (only manual `/reset-session`).
+
+**Stage 5 — first-run wizard: time format.** Use `AskUserQuestion` with concrete examples so the user doesn't need to know the acronyms (all three show the same moment, 1 PM):
+
+- `12-hour AM/PM` → `1:00 PM`
+- `24-hour` → `13:00`
+- `Military` → `1300`
+
+**Save settings:**
+```bash
+python <skill-path>/scripts/update_settings.py --idle <pick> --format <12h|24h|military>
+```
+
+After this, you're ready. Stages 4+5 are only run on first install (when init.py returned NEEDS_SETUP). Later changes go through `/time-anchor-settings`.
 
 ## Daily operations
 
@@ -92,7 +111,10 @@ python <skill-path>/scripts/update_settings.py --idle never              # disab
 
 Two settings:
 - `idle_reset_hours` (number or null for "never") — auto-reset threshold. Default 4.
-- `time_format` (`"12h"` or `"24h"`) — affects how `now.py`/`session_info.py` render times. Default `"12h"`.
+- `time_format` — affects how `now.py`/`session_info.py` render times. Default `"12h"`. One of:
+  - `"12h"` → `1:00 PM MST`
+  - `"24h"` → `13:00 MST`
+  - `"military"` → `1300 MST`
 
 ### Change timezone later
 

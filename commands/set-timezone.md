@@ -13,7 +13,7 @@ Use the time-anchor skill to set or **change** the user's timezone.
 
 **2. Auto-detect path.** If `$ARGUMENTS` is empty OR was an invalid/partial name (e.g. just `America` or `Phoenix`), run `detect_timezone.py`. If `best` is non-null:
 - Use `AskUserQuestion` with two options: `Use {best.timezone}` and `Pick a different one`.
-- If accepted, call `set_timezone.py` with the detected zone. Done.
+- If accepted, call `set_timezone.py` with the detected zone. Continue to step 5.
 
 **3. Free-text path.** If detection fails or user picks "different", ask in chat: *"What city, country, or region are you in?"*
 
@@ -42,15 +42,56 @@ Output is JSON: `{"query": ..., "matched": ..., "zones": [...]}`.
 
 **Fallback:** If `lookup_country.py` exits 1 (unknown country), tell the user, then ask them to clarify or type an IANA name directly. Never guess silently.
 
-**4. Save.** Once a zone is selected, call:
+**4. Save timezone.** Once a zone is selected, call:
 
 ```bash
 python <skill-path>/scripts/set_timezone.py "<IANA_NAME>"
 ```
 
-Confirm to the user with the human-readable timezone name and current local time.
+**5. First-run wizard — only on fresh install.**
+
+Determine "fresh install" by running this BEFORE step 1:
+
+```bash
+python <skill-path>/scripts/init.py
+```
+
+If init prints `STATUS: NEEDS_SETUP` (exit 2), this is a fresh install — remember this and continue through step 5 after saving the timezone. If init prints `READY` (exit 0), the user is just changing their timezone — stop after step 4. Use `/time-anchor-settings` to change idle or format separately.
+
+**5a. Idle reset.** Use `AskUserQuestion`:
+
+> *"How long should idle time be before your session timer resets? (Every command bumps the timer; if you go idle longer than this, the next command starts a fresh session.)"*
+
+Options:
+- `1 hour` — short bursts
+- `4 hours` — default, typical workday
+- `8 hours` — full work shift
+- `24 hours` — daily reset
+- `Never` — only manual `/reset-session`
+
+Map pick to `--idle 1` / `--idle 4` / `--idle 8` / `--idle 24` / `--idle never`.
+
+**5b. Time format.** Use `AskUserQuestion`:
+
+> *"How should I display the time? (Same moment in three formats:)"*
+
+Options — show example for each:
+- `12-hour AM/PM` → example: **`1:00 PM`**
+- `24-hour` → example: **`13:00`**
+- `Military` → example: **`1300`**
+
+Map pick to `--format 12h` / `--format 24h` / `--format military`.
+
+**5c. Save settings:**
+
+```bash
+python <skill-path>/scripts/update_settings.py --idle <pick> --format <pick>
+```
+
+**6. Confirm.** Print a final summary table to the user with their timezone, idle setting, time format, and the current local time (rendered in their chosen format). Done.
 
 ## Notes
 
 - Searchable full-IANA-list picker is not available in Claude Code's UI. If the user wants to type the IANA name directly, they can run `/set-timezone America/Phoenix` (or any valid IANA name) and step 1 handles it.
 - Never invent zones. Only use names that exist in `zoneinfo.available_timezones()` — `set_timezone.py` rejects invalid input regardless.
+- Step 5 (the wizard tail) runs **only on first-time setup**. If the user is just changing their timezone, skip it — they can use `/time-anchor-settings` for the other two.
